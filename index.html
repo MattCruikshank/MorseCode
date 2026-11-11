@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Morse Code Trainer</title>
+  <meta name="description" content="Learn Morse code by keying it on a light-up Morse tree. Hold Space or press the card.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Special+Elite&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script>
+    // Apply the saved theme before first paint to avoid a flash.
+    try {
+      var t = JSON.parse(localStorage.getItem('morse.settings') || '{}').theme;
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Morse Code</h1>
+    <button id="openSettings" class="icon-btn" aria-label="Settings" title="Settings">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11a7.5 7.5 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7.6 7.6 0 0 0 1.7-1l2.4 1 2-3.4zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg>
+    </button>
+  </header>
+
+  <main>
+    <section class="practice-bar">
+      <label for="passage">Text to key</label>
+      <select id="passage"></select>
+      <label class="inline-check" id="showCodeRow"><input type="checkbox" id="showCode"> Show code</label>
+      <button id="restart" class="btn">Restart</button>
+      <button id="clear" class="btn">Clear tape</button>
+    </section>
+    <div id="customBox" class="custom-box" hidden>
+      <textarea id="customText" rows="2" placeholder="Type anything you'd like to practice keying…"></textarea>
+      <button id="useCustom" class="btn primary">Use this text</button>
+    </div>
+    <p id="attribution" class="attribution"></p>
+
+    <section id="tapeWrap" class="tape-wrap">
+      <div class="tape" id="tapeView">
+        <div class="tape-inner" id="tape"></div>
+        <div class="tape-head"></div>
+      </div>
+    </section>
+
+    <section class="card" id="card" aria-label="Morse tree. Press and hold to key.">
+      <div class="card-title"><span>MORSE</span><span>CODE</span></div>
+      <div id="tree"></div>
+    </section>
+
+    <button id="key" class="key" aria-label="Morse key: press and hold">KEY</button>
+    <p class="key-caption">press &amp; hold here, on the card, or hold <kbd>Space</kbd></p>
+    <p id="status" class="status" aria-live="polite"></p>
+
+    <section class="help">
+      <h2>How to read the card</h2>
+      <ul>
+        <li>Every letter starts at the <strong>antenna</strong>. The first symbol picks a side: a dot goes right to <strong>E</strong>, a dash goes left to <strong>T</strong>.</li>
+        <li>On the right half, another <strong>dot</strong> keeps going right and a <strong>dash</strong> steps down. The left half is the mirror image: another <strong>dash</strong> keeps going left and a <strong>dot</strong> steps down.</li>
+        <li>A <span class="lg-dot"></span> circle means the letter ends in a dot. A <span class="lg-dash"></span> bar means it ends in a dash. They light <span class="g">green</span> and <span class="r">red</span> as you key.</li>
+        <li>A short press is a dot and a long press is a dash. Stop for a moment to finish the letter, and pause longer to add a space. Change the speed in <em>Settings</em>.</li>
+      </ul>
+    </section>
+  </main>
+
+  <div id="scrim" class="scrim" hidden></div>
+  <aside id="settings" class="drawer" aria-label="Settings" aria-hidden="true">
+    <div class="drawer-head">
+      <h2>Settings</h2>
+      <button id="closeSettings" class="icon-btn" aria-label="Close settings">✕</button>
+    </div>
+
+    <fieldset>
+      <legend>Appearance</legend>
+      <div class="seg" role="radiogroup" aria-label="Theme">
+        <label><input type="radio" name="theme" value="system"><span>System</span></label>
+        <label><input type="radio" name="theme" value="light"><span>Light</span></label>
+        <label><input type="radio" name="theme" value="dark"><span>Dark</span></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Characters</legend>
+      <label class="check"><input type="checkbox" id="letters"> Letters <small>A–Z</small></label>
+      <label class="check"><input type="checkbox" id="numbers"> Numbers <small>0–9</small></label>
+      <label class="check"><input type="checkbox" id="punctuation"> Punctuation <small>. , ? ' ! / ( ) &amp; : ; = + - _ " $ @</small></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Display</legend>
+      <label class="check"><input type="checkbox" id="tape"> Show paper tape</label>
+      <label class="check"><input type="checkbox" id="labels"> Show letters on the card</label>
+      <label class="check"><input type="checkbox" id="hints"> Show hints <small>(light up the path to the next letter on the card)</small></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Speed</legend>
+      <label class="range">
+        <span>Character speed <output id="wpmOut"></output></span>
+        <input type="range" id="wpm" min="5" max="40" step="1">
+      </label>
+      <label class="check"><input type="checkbox" id="farnsworth"> Farnsworth spacing <small>(letters keep their speed, gaps between them get longer)</small></label>
+      <label class="range" id="fwpmRow">
+        <span>Overall speed <output id="fwpmOut"></output></span>
+        <input type="range" id="fwpm" min="3" max="40" step="1">
+      </label>
+      <details class="timing">
+        <summary>Timing in milliseconds</summary>
+        <table id="timing"></table>
+        <p class="fine">Speeds use the standard "PARIS" word: one dot lasts 1200 ÷ WPM ms.</p>
+      </details>
+    </fieldset>
+
+    <fieldset>
+      <legend>Sound</legend>
+      <label class="check"><input type="checkbox" id="sound"> Sidetone</label>
+      <label class="range">
+        <span>Pitch <output id="pitchOut"></output></span>
+        <input type="range" id="pitch" min="300" max="1000" step="10">
+      </label>
+      <label class="range">
+        <span>Volume <output id="volumeOut"></output></span>
+        <input type="range" id="volume" min="0" max="100" step="1">
+      </label>
+    </fieldset>
+  </aside>
+
+  <script src="js/morse.js"></script>
+  <script src="js/passages.js"></script>
+  <script src="js/tree.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
