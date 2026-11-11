@@ -2,6 +2,10 @@
 
 A web page for learning Morse code, modeled on a pocket "Morse tree" card. Hold **Space**, or press the card or the **KEY** button. A short press is a dot and a long press is a dash. The path from the antenna lights up as you key: green for dots, red for dashes.
 
+**Try it: https://mattcruikshank.github.io/MorseCode/**
+
+![Keying John 3:16 on the Morse tree card](docs/screenshot.png)
+
 ## Features
 
 - **Free keying.** Letters decode onto a paper-tape strip after you pause.
